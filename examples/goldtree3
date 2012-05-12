@@ -1,0 +1,33 @@
+( (S 
+    (NP-SBJ (NNS Investors) )
+    (VP (MD may) 
+      (VP (VB have) 
+        (VP (VBD reacted) 
+          (ADVP-MNR (RB so) (RB strongly) )
+          (PP-CLR (TO to) 
+            (NP 
+              (NP (NNP Friday) (POS 's) )
+              (NNP U.S.) (NN stock) (NN market) (NN loss) ))
+          (SBAR-PRP (IN because) 
+            (S 
+              (NP-SBJ (PRP they) )
+              (VP (VBD had) 
+                (NP 
+                  (NP (JJ vivid) (NNS memories) )
+                  (PP (IN of) 
+                    (NP 
+                      (NP (DT the) (NNP Frankfurt) (NN exchange) (POS 's) )
+                      (S-NOM 
+                        (NP-SBJ (-NONE- *) )
+                        (VP (VBG losing) 
+                          (NP 
+                            (NP (CD 35) (NN %) )
+                            (PP (IN of) 
+                              (NP (PRP$ its) (NN value) )))
+                          (PP-TMP (IN in) 
+                            (NP 
+                              (NP (DT the) (CD 1987) (NN crash) )
+                              (CC and) 
+                              (NP (PRP$ its) (NN wake) ))))))))))))))
+    (. .) ))
+

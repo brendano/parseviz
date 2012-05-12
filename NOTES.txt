@@ -1,0 +1,21 @@
+Differences in SD vs LTH
+
+compound verbs.  AUX vs VC.  AUX gets head verb with everything else as modifiers.  but VC just chains out to the head verb.
+
+numbers.  QUANT
+
+
+deterministic labeling: looks good, except subj vs. object.
+
+
+---
+
+nice SD example
+
+On Sunday, with a quarterback who had hitched his career to resurrecting the Saints and with a team playing nearly flawlessly, the Saints gave New Orleans a reason to do what it does better than any other American city: celebrate.
+
+it gets an amazing verb chain at the end ...
+
+do -ccomp-> does -ccomp-> celebrate
+
+http://mendocino.ark.cs.cmu.edu/treeviz/?s=On+Sunday,+with+a+quarterback+who+had+hitched+his+career+to+resurrecting+the+Saints+and+with+a+team+playing+nearly+flawlessly,+the+Saints+gave+New+Orleans+a+reason+to+do+what+it+does+better+than+any+other+American+city:+celebrate.&parser=SP_DepSD_cc

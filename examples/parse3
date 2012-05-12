@@ -1,0 +1,24 @@
+1	japan	japan	NNP	NNP	-	5	NMOD	-	-
+2	and	and	CC	CC	-	5	NMOD	-	-
+3	the	the	DT	DT	-	5	NMOD	-	-
+4	united	united	NNP	NNP	-	5	NMOD	-	-
+5	states	states	NNPS	NNPS	-	8	SUB	-	-
+6	on	on	IN	IN	-	8	VMOD	-	-
+7	wednesday	wednesday	NNP	NNP	-	6	PMOD	-	-
+8	held	held	VBD	VBD	-	0	ROOT	-	-
+9	a	a	DT	DT	-	11	NMOD	-	-
+10	new	new	JJ	JJ	-	11	NMOD	-	-
+11	round	round	NN	NN	-	8	OBJ	-	-
+12	of	of	IN	IN	-	11	NMOD	-	-
+13	bilateral	bilateral	JJ	JJ	-	15	NMOD	-	-
+14	trade	trade	NN	NN	-	15	NMOD	-	-
+15	talks	talks	NNS	NNS	-	12	PMOD	-	-
+16	aimed	aimed	VBN	VBN	-	15	NMOD	-	-
+17	at	at	IN	IN	-	16	VMOD	-	-
+18	opening	opening	VBG	VBG	-	17	PMOD	-	-
+19	the	the	DT	DT	-	22	NMOD	-	-
+20	closed	closed	JJ	JJ	-	22	NMOD	-	-
+21	japanese	japanese	JJ	JJ	-	22	NMOD	-	-
+22	market	market	NN	NN	-	18	OBJ	-	-
+23	.	.	.	.	-	8	P	-	-
+
