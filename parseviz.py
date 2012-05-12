@@ -197,13 +197,14 @@ def dot_from_tuples(tuples):
   return dot
 
 def make_svg(tuples):
+  assert False, "not done yet"
   print tuples
   words = [row for row in tuples if row[0]=='NODE']
 
 def make_html(filename, svg):
+  assert False, "not done yet"
   with open(filename,'w') as f:
     print>>f, svg
-
 
 def call_dot(dotstr, filename="/tmp/tmp.png", format='png'):
   dot = "/tmp/tmp.%s.dot" % stamp()
@@ -217,6 +218,11 @@ def call_dot(dotstr, filename="/tmp/tmp.png", format='png'):
   print cmd
   os.system(cmd)
 
+counter = 0
+def stamp():
+  global counter
+  counter += 1
+  return "%s.%s" % (os.getpid(), counter)
 
 def open_file(filename):
   import webbrowser
@@ -238,8 +244,8 @@ def conll_to_tuples(conll):
   for row in stuff:
     id = row[0]
     word=row[1]
-    #pos=row[3]         ## Usual POS, I think
-    pos=row[4]          ## Google Web Treebank fine-grained POS
+    pos=row[3]         ## Usual POS, I think
+    #pos=row[4]         ## Google Web Treebank fine-grained POS
     target = row[6]
     rel = row[7]
     if id != '0':
@@ -249,10 +255,21 @@ def conll_to_tuples(conll):
     if rel in dep_colors:
       opts.update({'fontcolor':dep_colors[rel], 'color':dep_colors[rel]})
     if rel in dep_bold: opts['fontname'] = 'Times-Bold'
-    #if target!='0':
     if target!='-1' and word != '0':
       ret.append(("EDGE", target,id, opts))
   return ret
+
+def malt_to_tuples(malt_string):
+  fake_conll = []
+  def f():
+    bigtoks = malt_string.split()
+    for myid,bigtok in enumerate(bigtoks):
+      word,pos,parent,deprel = bigtok.split('/')
+      yield (myid+1,word, '-', pos,pos,'-', parent,deprel)
+  fake_conll = [' '.join(str(x) for x in row) for row in f()]
+  return conll_to_tuples('\n'.join(fake_conll))
+
+
 
 def show_conll(conll, format):
   tuples = conll_to_tuples(conll)
@@ -265,12 +282,6 @@ def show_conll(conll, format):
     call_dot(dotstr, filename, format=format)
   return filename
 
-counter = 0
-def stamp():
-  global counter
-  counter += 1
-  return "%s.%s" % (os.getpid(), counter)
-
 def do_multi_tree(parses, to_tuples):  ##= lambda s: dot_from_tuples(graph_tuples(s))):
   base = "/tmp/tmp.%s_NUM.pdf" % stamp()
   for i,parse in enumerate(parses):
@@ -281,39 +292,45 @@ def do_multi_tree(parses, to_tuples):  ##= lambda s: dot_from_tuples(graph_tuple
   os.system("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s" % (output,inputs))
   return output
   
-def smart_process(input, format):
+def detect_type(input):
+  """return: (format, [parses_as_strings])"""
+
   input = input.strip()
   lines = input.split("\n")
   lines = [l for l in lines if l.strip()]
-  # multiple sexprs
-  is_multitree = len(lines) > 1 and is_balanced(lines[0]) and is_balanced(lines[1])
-  if format=='pdf' and is_multitree:
-    try:
-      return do_multi_tree(lines, lambda s: graph_tuples(parse_sexpr(s)))
-    except BadSexpr:
-      pass
+  if '\t' in lines[0]:
+    format = 'conll'
+    parts = re.split(r'\n[ \t\r]*\n', input)
+    return format,parts
+  if re.search(r'[\(\)]', lines[0]) and is_balanced(lines[0]):
+    # one sexpr per line
+    return 'sexpr', lines
+  if all(('/' in L and '\t' not in L) for L in lines[:100]):
+    return 'malt', lines
   # single (potentially multiline) sexpr
-  if not all( len(x.split()) in (0,10) for x in lines[:3]) and \
-     '(' in input and ')' in input:
-    try:
-      return show_tree(input, format)
-    except BadSexpr:
-      pass
-  parts = re.split(r'\n[ \t\r]*\n', input)
-  # multiple dep parses
-  if format=='pdf' and len(parts) > 1:
-    return do_multi_tree(parts, conll_to_tuples)
-  # single dep parse
-  return show_conll(input, format)
+  return 'sexpr', [input]
+
+def smart_process(input, output_format):
+  input_format, parse_strings = detect_type(input)
+
+  if input_format=='sexpr':
+    converter = lambda s: graph_tuples(parse_sexpr(s))
+  elif input_format=='conll':
+    converter = conll_to_tuples
+  elif input_format=='malt':
+    converter = malt_to_tuples
+  # always do multitree these days
+  assert output_format=='pdf', "non-pdf doesn't work now, needs refactoring here"
+  return do_multi_tree(parse_strings, converter)
 
 if __name__=='__main__':
   input = sys.stdin.read().strip()
-  format = 'png' if '-png' in sys.argv else \
+  output_format = 'png' if '-png' in sys.argv else \
             'eps' if '-eps' in sys.argv else \
             'pdf' if '-pdf' in sys.argv else \
             'html' if '-html' in sys.argv else \
             'pdf' if sys.platform=='darwin' else \
             'png'
-  output_filename = smart_process(input, format)
+  output_filename = smart_process(input, output_format)
   open_file(output_filename)
 

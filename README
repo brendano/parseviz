@@ -1,3 +1,10 @@
 Visualize constituent and dependency parses as PDF or image formats, through GraphViz.
 Web interface running at: http://www.ark.cs.cmu.edu/parseviz/
 
+To use the commandline, put the parse on STDIN and it outputs PDF.
+For example,
+
+cat examples/mobydick.heilman | ./parseviz.py
+head examples/malt.txt | ./parseviz.py
+cat examples/deps10 | ./parseviz.py
+
