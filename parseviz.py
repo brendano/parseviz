@@ -21,6 +21,8 @@ and requires GraphViz to be installed - the 'dot' command.
 from __future__ import with_statement
 import sys,os,time,pprint,re
 
+QUIET = False
+
 nounish = '#700070'
 verbish = '#207020'
 prepish = '#C35617'
@@ -215,7 +217,8 @@ def call_dot(dotstr, filename="/tmp/tmp.png", format='png'):
     cmd = "dot -Teps < " +dot+ " | ps2pdf -dEPSCrop -dEPSFitPage - > " + filename
   else:
     cmd = "dot -T" +format+ " < " +dot+ " > " + filename
-  print cmd
+  if not QUIET:
+    print cmd
   os.system(cmd)
 
 counter = 0
