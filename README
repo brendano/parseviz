@@ -8,3 +8,4 @@ cat examples/mobydick.heilman | ./parseviz.py
 head examples/malt.txt | ./parseviz.py
 cat examples/deps10 | ./parseviz.py
 
+
