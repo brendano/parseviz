@@ -4,12 +4,14 @@
 parseviz.py
 
 Give this an s-expression, treebank-style parse tree on STDIN, or a CoNLL
-dependency format, this script will make a graphviz graphic and open it on your
+dependency format. This script will make a graphviz graphic and open it on your
 computer to look at.  Some sensible colors have been chosen for
  * PTB-style POS tags
  * PTB constituent tree non-terminals
  * LTH-style (pennconverter, penn2malt) dependencies
  * Stanford dependencies
+
+(Though for many purposes the defaults give too many colors.)
 
 Brendan O'Connor (anyall.org)
 http://www.ark.cs.cmu.edu/parseviz
@@ -35,7 +37,7 @@ fade = '#b0b0b0'
 #verbish = '#d02020'
 
 
-## LTH and penn2malt dependency label colors
+## LTH/pennconverter and penn2malt dependency label colors
 
 dep_colors = {
 # tricky. LTH uses SUB for "subordinate clause" but penn2malt uses it for "subject".
@@ -58,7 +60,7 @@ dep_colors = {
 
 ## Stanford dependency label colors
 # parts out of the stanford dep hierarchy
-d=dep_colors
+d = dep_colors
 for c in 'aux auxpass cop'.split(): d[c] = verbish
 for c in 'subj nsubj nsubjpass csubj'.split(): d[c] = d['SBJ']
 for c in 'obj dobj iobj '.split(): d[c] = d['OBJ']
@@ -140,7 +142,7 @@ def parse_sexpr(s):
     root = ["ROOT"] + root
   return root
 
-class BadSexpr(Exception):pass
+class BadSexpr(Exception): pass
 
 def is_balanced(s):
   if '(' not in s: return False
@@ -324,6 +326,7 @@ def smart_process(input, output_format):
     converter = malt_to_tuples
   # always do multitree these days
   assert output_format=='pdf', "non-pdf doesn't work now, needs refactoring here"
+  # multitree only works for PDF.  so if you dont want PDF need to force single parse
   return do_multi_tree(parse_strings, converter)
 
 if __name__=='__main__':
