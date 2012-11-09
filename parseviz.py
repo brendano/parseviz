@@ -21,7 +21,7 @@ and requires GraphViz to be installed - the 'dot' command.
 """
 
 from __future__ import with_statement
-import sys,os,time,pprint,re
+import sys,os,time,pprint,re,json
 
 QUIET = False
 
@@ -213,7 +213,7 @@ def make_html(filename, svg):
 def call_dot(dotstr, filename="/tmp/tmp.png", format='png'):
   dot = "/tmp/tmp.%s.dot" % stamp()
   with open(dot, 'w') as f:
-    print>>f, dotstr
+    print>>f, dotstr.encode('utf8')
 
   if False and format=='pdf':
     cmd = "dot -Teps < " +dot+ " | ps2pdf -dEPSCrop -dEPSFitPage - > " + filename
@@ -243,37 +243,56 @@ def show_tree(sexpr, format):
   call_dot(dotstr, filename, format=format)
   return filename
 
-def conll_to_tuples(conll):
+# We seem to be using 1-indexing, so 0 is root
+
+def tokrecords_to_tuples(tokrecords):
+  """returns tuples to turn into GraphViz directives"""
   ret = []
-  stuff = [line.split() for line in conll.split("\n") if line.strip()]
-  for row in stuff:
-    id = row[0]
+  for tokid, word_surface, pos, parent, deprel in tokrecords:
+    if tokid != 0:
+      col = pos_color(pos)
+      ret.append(("NODE", tokid, "%s /%s" % (word_surface,pos), {'shape':'none', 'fontcolor':col}))
+    opts = {'label':deprel.lower(),'dir':'forward'}  #forward back both none
+    if deprel in dep_colors:
+      opts.update({'fontcolor':dep_colors[deprel], 'color':dep_colors[deprel]})
+    if deprel in dep_bold: opts['fontname'] = 'Times-Bold'
+    if parent!=-1 and word_surface != 0:
+      ret.append(("EDGE", parent,tokid, opts))
+  return ret
+
+def conll_to_tuples(conll):
+  tokrecords = []
+  rows = [line.split() for line in conll.split("\n") if line.strip()]
+  for row in rows:
+    tokid = int(row[0])
     word=row[1]
     pos=row[3]         ## Usual POS, I think
     #pos=row[4]         ## Google Web Treebank fine-grained POS
-    target = row[6]
-    rel = row[7]
-    if id != '0':
-      col = pos_color(pos)
-      ret.append(("NODE", id, "%s /%s" % (word,pos), {'shape':'none', 'fontcolor':col}))
-    opts = {'label':rel.lower(),'dir':'forward'}  #forward back both none
-    if rel in dep_colors:
-      opts.update({'fontcolor':dep_colors[rel], 'color':dep_colors[rel]})
-    if rel in dep_bold: opts['fontname'] = 'Times-Bold'
-    if target!='-1' and word != '0':
-      ret.append(("EDGE", target,id, opts))
-  return ret
+    target = int(row[6])
+    deprel = row[7]
+    tokrecords.append((tokid,word,pos,target,deprel))
+  print tokrecords
+  return tokrecords_to_tuples(tokrecords)
 
 def malt_to_tuples(malt_string):
-  fake_conll = []
   def f():
     bigtoks = malt_string.split()
     for myid,bigtok in enumerate(bigtoks):
       word,pos,parent,deprel = bigtok.split('/')
-      yield (myid+1,word, '-', pos,pos,'-', parent,deprel)
-  fake_conll = [' '.join(str(x) for x in row) for row in f()]
-  return conll_to_tuples('\n'.join(fake_conll))
+      yield myid+1, word, pos, parent, deprel
+  return tokrecords_to_tuples(list(f()))
 
+def jsent_to_tuples(jsent_line):
+  import json
+  parts = jsent_line.split('\t')
+  jsent = json.loads(parts[-1])
+  def f():
+    for deprow in jsent['deps']:
+      deprel,childid,headid= deprow[:3]
+      childtok = jsent['tokens'][childid]
+      word,lemma,pos = childtok[:3]
+      yield childid+1, word, pos, headid+1, deprel
+  return tokrecords_to_tuples(list(f()))
 
 
 def show_conll(conll, format):
@@ -296,17 +315,31 @@ def do_multi_tree(parses, to_tuples):  ##= lambda s: dot_from_tuples(graph_tuple
   inputs = base.replace("NUM","*")
   os.system("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s" % (output,inputs))
   return output
-  
+
+def is_json(s):
+  import json
+  try:
+    json.loads(s)
+    return True
+  except ValueError:
+    return False
+  return False
+
 def detect_type(input):
   """return: (format, [parses_as_strings])"""
-
   input = input.strip()
   lines = input.split("\n")
   lines = [l for l in lines if l.strip()]
   if '\t' in lines[0]:
-    format = 'conll'
-    parts = re.split(r'\n[ \t\r]*\n', input)
-    return format,parts
+    if is_json(lines[0].split('\t')[-1]):
+      if '-tree' in sys.argv:
+        return 'sexpr', [json.loads(L.split('\t')[-1])['parse'] for L in lines]
+      else:
+        return 'jsent', lines
+    else:
+      format = 'conll'
+      parts = re.split(r'\n[ \t\r]*\n', input)
+      return format,parts
   if re.search(r'[\(\)]', lines[0]) and is_balanced(lines[0]):
     # one sexpr per line
     return 'sexpr', lines
@@ -324,6 +357,11 @@ def smart_process(input, output_format):
     converter = conll_to_tuples
   elif input_format=='malt':
     converter = malt_to_tuples
+  elif input_format=='jsent':
+    if '-sexpr' in sys.argv:
+      converter = lambda line: graph_tuples(parse_sexpr(json.loads(line.split('\t')[-1])['parse']))
+    else:
+      converter = jsent_to_tuples
   # always do multitree these days
   assert output_format=='pdf', "non-pdf doesn't work now, needs refactoring here"
   # multitree only works for PDF.  so if you dont want PDF need to force single parse
@@ -340,3 +378,4 @@ if __name__=='__main__':
   output_filename = smart_process(input, output_format)
   open_file(output_filename)
 
+# vim: sw=2:sts=2
