@@ -15,12 +15,15 @@ def css():
   .token_id { color:gray; display:block; font-size:9pt}
   .nice_ent_sub { font-size: 8pt; }
   .ment_bracket { padding-left: 3pt; padding-right: 3pt }
+  .ent_num {  }
+  td { vertical-align: top; }
   """
 
   ent_colors = " maroon navy green orange purple magenta teal  ".split()
   for i in range(100):
     col = ent_colors[i % len(ent_colors)]
     h += ".ent_num_%d { color: %s } \n" % (i, col)
+    h += ".ent_num_%d td { color: %s } \n" % (i, col)
   return h
 
 def token_html(tok, left='', right=''):
@@ -40,7 +43,8 @@ def token_html(tok, left='', right=''):
 def sent_html(sent_id, sent, tok_ents):
   h = ""
   h += "<div class=sent>"
-  h += "<div style='vertical-align:top; display:inline-block; padding-right:10pt'>(S %s)</div>" % sent_id
+  h += "<div style='vertical-align:top; display:inline-block; padding-right:10pt'>"
+  h += "<a name='S{snum}'>(S{snum})</a></div>".format(snum=sent_id)
   N = len(sent['tokens'])
   cur_ents = set()
   for i,tok in enumerate(sent['tokens']):
@@ -57,7 +61,9 @@ def sent_html(sent_id, sent, tok_ents):
         cur_ents.add(ent)
     for cur_ent in set(cur_ents):
       if i == N-1 or all(e != cur_ent for e in tok_ents[i+1]):
-        right += "<span class=ment_bracket>]<span class=nice_ent_sub>%s</span></span>" % (cur_ent['nice_id'])
+        # right += "<span class=ment_bracket>]<span class=nice_ent_sub>%s</span></span>" % (cur_ent['nice_id'])
+        right += "<span class=ment_bracket>]<span class=nice_ent_sub><a href='#{eid}'>{eid}</a> </span></span>".format(eid=cur_ent['nice_id'])
+        
         cur_ents.remove(cur_ent)
 
     th = token_html(tok, left=left, right=right)
@@ -122,7 +128,8 @@ def convert_coref(xm, sentences):
     ent = entities[i]
     ent['num'] = i
     s,pos = ent['first_mention']
-    ent['nice_id'] = '%s:%s' % (s,pos)
+    # ent['nice_id'] = '%s:%s' % (s,pos)
+    ent['nice_id'] = "E%s" % i
     ent['nice_name'] = sentences[s]['tokens'][pos]['word']
 
   return entities
@@ -157,18 +164,29 @@ if __name__=='__main__':
 
   print "<hr>"
 
+  # print "<table>"
+  print "<table cellpadding=3 border=1 cellspacing=0 width='100%'>"
+
   for ent in doc['entities']:
-    print """<div class="ent_num_%d">""" % ent['num']
+    # print """<div class="ent_info ent_num_%d">""" % ent['num']
+    print """<tr class="ent_info ent_num_%d">""" % ent['num']
+
+    cells = []
+    cells.append('<a name="{eid}">{eid}</a>'.format(eid=ent['nice_id']))
+
     hs = []
     for ment in ent['mentions']:
       text = [doc['sentences'][ment['sentence']]['tokens'][i]['word'] for i in range(ment['start'], ment['end']) ]
       #print ment
       #print text
-      hs.append( "%s <small>(%s:%s,%s-%s)</small>" % (' '.join(text),
-        ment['sentence'], ment['head'], ment['start'], ment['end'],
-        ))
-    print ' | '.join(hs)
-    print """</div>"""
+      s = "%s <small>(%s:%s,%s-%s)</small>" % (' '.join(text),
+        ment['sentence'], ment['head'], ment['start'], ment['end'])
+      s = """<small><a href="#S{snum}">S{snum}</a></small> {text}""".format(snum=ment['sentence'], text=' '.join(text))
+      hs.append(s)
+    cells.append('<br>'.join(hs))
+    print "<tr>", "".join("<td>" + cell for cell in cells)
+    print "</tr>"
+  print "</table>"
   #print "<pre>"
   #print json.dumps(doc, indent=4)
   #print "</pre>"
