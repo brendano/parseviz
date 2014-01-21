@@ -271,7 +271,6 @@ def conll_to_tuples(conll):
     target = int(row[6])
     deprel = row[7]
     tokrecords.append((tokid,word,pos,target,deprel))
-  print tokrecords
   return tokrecords_to_tuples(tokrecords)
 
 def malt_to_tuples(malt_string):
@@ -282,15 +281,17 @@ def malt_to_tuples(malt_string):
       yield myid+1, word, pos, parent, deprel
   return tokrecords_to_tuples(list(f()))
 
-def jsent_to_tuples(jsent_line):
-  import json
+def jsent_to_dep_tuples(jsent_line):
   parts = jsent_line.split('\t')
   jsent = json.loads(parts[-1])
   def f():
-    for deprow in jsent['deps']:
-      deprel,childid,headid= deprow[:3]
-      childtok = jsent['tokens'][childid]
-      word,lemma,pos = childtok[:3]
+    for k in ['deps','deps_cc']:
+      if k in jsent:
+        deprows = jsent[k]
+    print deprows
+    for deprow in deprows:
+      deprel,headid,childid = deprow[:3]
+      word,lemma,pos = [jsent[k][childid] for k in ['tokens','lemmas','pos']]
       yield childid+1, word, pos, headid+1, deprel
   return tokrecords_to_tuples(list(f()))
 
@@ -317,9 +318,16 @@ def do_multi_tree(parses, to_tuples):  ##= lambda s: dot_from_tuples(graph_tuple
   return output
 
 def is_json(s):
-  import json
   try:
     json.loads(s)
+    return s.strip()[0]=='{' and s.strip()[-1]=='}'
+  except ValueError:
+    return False
+  return False
+
+def is_conll_like(lines):
+  try:
+    for L in lines: int(L.split()[0])
     return True
   except ValueError:
     return False
@@ -330,7 +338,18 @@ def detect_type(input):
   input = input.strip()
   lines = input.split("\n")
   lines = [l for l in lines if l.strip()]
-  if '\t' in lines[0]:
+
+  if is_conll_like(lines):
+    format = 'conll'
+    parts = re.split(r'\n[ \t\r]*\n', input)
+    return format,parts
+
+  if is_json(lines[0].split('\t')[-1]):
+    d = json.loads( lines[0].split('\t')[-1] )
+    if 'parse' in d or 'deps' in d or 'deps_cc' in d:
+      return 'jsent', lines
+
+  elif '\t' in lines[0]:
     if is_json(lines[0].split('\t')[-1]):
       if '-tree' in sys.argv:
         return 'sexpr', [json.loads(L.split('\t')[-1])['parse'] for L in lines]
@@ -349,23 +368,27 @@ def detect_type(input):
   return 'sexpr', [input]
 
 def smart_process(input, output_format):
-  input_format, parse_strings = detect_type(input)
-
-  if input_format=='sexpr':
-    converter = lambda s: graph_tuples(parse_sexpr(s))
-  elif input_format=='conll':
-    converter = conll_to_tuples
-  elif input_format=='malt':
-    converter = malt_to_tuples
-  elif input_format=='jsent':
-    if '-sexpr' in sys.argv:
-      converter = lambda line: graph_tuples(parse_sexpr(json.loads(line.split('\t')[-1])['parse']))
-    else:
-      converter = jsent_to_tuples
   # always do multitree these days
   assert output_format=='pdf', "non-pdf doesn't work now, needs refactoring here"
-  # multitree only works for PDF.  so if you dont want PDF need to force single parse
-  return do_multi_tree(parse_strings, converter)
+
+  input_format, parse_strings = detect_type(input)
+
+  if input_format=='jsent':
+    # only handle singletons for now
+    dep_pdf = do_multi_tree(parse_strings, jsent_to_dep_tuples)
+    c_pdf = do_multi_tree(parse_strings, lambda s: graph_tuples(parse_sexpr( json.loads(s)['parse'] )))
+    finalout = "/tmp/tmp.%s_merged.pdf" % stamp()
+    os.system("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s" % 
+        (finalout, ' '.join([c_pdf,dep_pdf])))
+    return finalout
+  else:
+    if input_format=='sexpr':
+      converter = lambda s: graph_tuples(parse_sexpr(s))
+    elif input_format=='conll':
+      converter = conll_to_tuples
+    elif input_format=='malt':
+      converter = malt_to_tuples
+    return do_multi_tree(parse_strings, converter)
 
 if __name__=='__main__':
   input = sys.stdin.read().strip()
@@ -374,8 +397,9 @@ if __name__=='__main__':
             'pdf' if '-pdf' in sys.argv else \
             'html' if '-html' in sys.argv else \
             'pdf' if sys.platform=='darwin' else \
-            'png'
+            'pdf'
   output_filename = smart_process(input, output_format)
-  open_file(output_filename)
+  print "OUTPUT",output_filename
+  # open_file(output_filename)
 
 # vim: sw=2:sts=2
