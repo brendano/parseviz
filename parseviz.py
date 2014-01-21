@@ -210,8 +210,8 @@ def make_html(filename, svg):
   with open(filename,'w') as f:
     print>>f, svg
 
-def call_dot(dotstr, filename="/tmp/tmp.png", format='png'):
-  dot = "/tmp/tmp.%s.dot" % stamp()
+def call_dot(dotstr, filename="/tmp/parseviz.png", format='png'):
+  dot = "/tmp/parseviz.%s.dot" % stamp()
   with open(dot, 'w') as f:
     print>>f, dotstr.encode('utf8')
 
@@ -239,7 +239,7 @@ def show_tree(sexpr, format):
   tree = parse_sexpr(sexpr)
   tuples = graph_tuples(tree)
   dotstr = dot_from_tuples(tuples)
-  filename = "/tmp/tmp.%s.%s.%s" % (os.getid(), time.time(),format)
+  filename = "/tmp/parseviz.%s.%s.%s" % (os.getid(), time.time(),format)
   call_dot(dotstr, filename, format=format)
   return filename
 
@@ -288,7 +288,6 @@ def jsent_to_dep_tuples(jsent_line):
     for k in ['deps','deps_cc']:
       if k in jsent:
         deprows = jsent[k]
-    print deprows
     for deprow in deprows:
       deprel,headid,childid = deprow[:3]
       word,lemma,pos = [jsent[k][childid] for k in ['tokens','lemmas','pos']]
@@ -298,7 +297,7 @@ def jsent_to_dep_tuples(jsent_line):
 
 def show_conll(conll, format):
   tuples = conll_to_tuples(conll)
-  filename = "/tmp/tmp.%s.%s" % (stamp(), format)
+  filename = "/tmp/parseviz.%s.%s" % (stamp(), format)
   if format=='html':
     svg = make_svg(tuples)
     make_html(filename, svg)
@@ -308,7 +307,7 @@ def show_conll(conll, format):
   return filename
 
 def do_multi_tree(parses, to_tuples):  ##= lambda s: dot_from_tuples(graph_tuples(s))):
-  base = "/tmp/tmp.%s_NUM.pdf" % stamp()
+  base = "/tmp/parseviz.%s_NUM.pdf" % stamp()
   for i,parse in enumerate(parses):
     output = base.replace("NUM", "%.03d" % (i+1))
     call_dot(dot_from_tuples(to_tuples(parse)), filename=output, format='pdf')
@@ -377,7 +376,7 @@ def smart_process(input, output_format):
     # only handle singletons for now
     dep_pdf = do_multi_tree(parse_strings, jsent_to_dep_tuples)
     c_pdf = do_multi_tree(parse_strings, lambda s: graph_tuples(parse_sexpr( json.loads(s)['parse'] )))
-    finalout = "/tmp/tmp.%s_merged.pdf" % stamp()
+    finalout = "/tmp/parseviz.%s_merged.pdf" % stamp()
     os.system("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s" % 
         (finalout, ' '.join([c_pdf,dep_pdf])))
     return finalout
