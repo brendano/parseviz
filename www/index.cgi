@@ -39,16 +39,19 @@ function do_example(name) {
 
 function resize_viewer() {
   if ($('object').length > 0) {
-    $('object').height($(window).height() - $('#topstuff').height() - $('#topstuff').offset().top - 15)
+    var newheight = $(window).height() - $('#topstuff').height() - $('#topstuff').offset().top - 5;
+    $('object').attr('height', newheight);
   }
 }
 
 $(document).ready(function(){
 
-  $(window).resize(resize_viewer)
+  $(window).resize(resize_viewer);
+  resize_viewer();
+  //setInterval(resize_viewer, 200);
 
   if ($('[name=parsedata]').text().length == 0) {
-    $('input[name=s]').focus()
+    $('input[name=s]').focus();
   }
 })
 
@@ -116,7 +119,7 @@ if parsedata:
     pdf_filename = parseviz.smart_process(parsedata, 'pdf')
     os.system("mv %s %s" % (pdf_filename, final))
     os.system("rm -f /tmp/parseviz.*")
-  url = "http://www.ark.cs.cmu.edu/parseviz/%s" % final
+  # url = "http://www.ark.cs.cmu.edu/parseviz/%s" % final
   # http://docs.google.com/viewer has minimal info
 
   # g_url = "http://docs.google.com/viewer?url=%s" % urllib.quote(url)
