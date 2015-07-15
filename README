@@ -1,5 +1,5 @@
 Visualize constituent and dependency parses as PDF/images, through GraphViz.
-Web interface running at: http://www.ark.cs.cmu.edu/parseviz/
+Web interface running at: http://brenocon.com/parseviz/
 By Brendan O'Connor (http://brenocon.com)
 
 To use the commandline, put the parse on STDIN and it outputs PDF.
@@ -11,3 +11,4 @@ cat examples/deps10 | ./parseviz.py
 
 Moby Dick hand-parsed tree contributed by Michael Heilman. (http://www.cs.cmu.edu/~mheilman/)
 
+www/ has a CGI wrapper used in http://brenocon.com/parseviz/

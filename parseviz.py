@@ -36,6 +36,12 @@ fade = '#b0b0b0'
 #nounish = '#700070'
 #verbish = '#d02020'
 
+# nounish = 'black'
+# verbish = 'black'
+# prepish = 'black'
+# modifiers = 'black'
+# coordish = 'black'
+# fade = 'black'
 
 ## LTH/pennconverter and penn2malt dependency label colors
 
