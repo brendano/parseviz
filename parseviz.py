@@ -380,12 +380,26 @@ def smart_process(input, output_format):
 
   if input_format=='jsent':
     # only handle singletons for now
-    dep_pdf = do_multi_tree(parse_strings, jsent_to_dep_tuples)
-    c_pdf = do_multi_tree(parse_strings, lambda s: graph_tuples(parse_sexpr( json.loads(s)['parse'] )))
-    finalout = "/tmp/parseviz.%s_merged.pdf" % stamp()
-    os.system("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s" % 
-        (finalout, ' '.join([c_pdf,dep_pdf])))
-    return finalout
+    print>>sys.stderr, parse_strings
+    xx = json.loads(parse_strings[0])
+    has_deps = ('deps' in xx or 'deps_cc' in xx)
+    has_cparse= ('parse' in xx)
+    if has_deps:
+      dep_pdf = do_multi_tree(parse_strings, jsent_to_dep_tuples)
+    if has_cparse:
+      c_pdf = do_multi_tree(parse_strings, lambda s: graph_tuples(parse_sexpr( json.loads(s)['parse'] )))
+    if has_deps and has_cparse:
+      finalout = "/tmp/parseviz.%s_merged.pdf" % stamp()
+      os.system("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s" % 
+          (finalout, ' '.join([c_pdf,dep_pdf])))
+      return finalout
+    elif has_deps:
+      return dep_pdf
+    elif has_cparse:
+      return c_pdf
+    else:
+      return "WTF"
+
   else:
     if input_format=='sexpr':
       converter = lambda s: graph_tuples(parse_sexpr(s))
